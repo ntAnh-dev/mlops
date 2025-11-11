@@ -39,6 +39,25 @@ format:
 	ruff check --fix
 	ruff format
 
+.PHONY: download
+download:
+	python src/sentiment140_mlops/data/make_dataset.py
+
+.PHONY: train_ml
+train_ml:
+	python src/sentiment140_mlops/models/train_ml.py
+
+.PHONY: train_dl
+train_dl:
+	python src/sentiment140_mlops/models/train_dl.py
+
+.PHONY: select
+select:
+	python src/sentiment140_mlops/models/select_best.py
+
+.PHONY: serve
+serve:
+	uvicorn src.sentiment140_mlops.models.predict_model:app --reload
 
 
 

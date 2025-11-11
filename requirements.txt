@@ -1,6 +1,7 @@
 ipython
 jupyterlab
 matplotlib
+mkdocs
 notebook
 numpy
 pandas
@@ -8,4 +9,15 @@ pip
 python-dotenv
 ruff
 scikit-learn
+transformers
+torch
+tensorflow
+mlflow
+fastapi
+uvicorn
+dvc
+dvc-gdrive
+kaggle
+cookiecutter
+cookiecutter-data-science
 -e .

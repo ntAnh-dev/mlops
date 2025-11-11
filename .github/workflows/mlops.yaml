@@ -1,0 +1,30 @@
+name: MLOps-CI-CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "src/**"
+      - "data/**"
+
+jobs:
+  mlops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Download + Preprocess
+        run: python src/sentiment140_mlops/data/make_dataset.py
+      - name: Train ML
+        run: python src/sentiment140_mlops/models/train_ml.py
+      - name: Train DL
+        run: python src/sentiment140_mlops/models/train_dl.py
+      - name: Select best
+        run: python src/sentiment140_mlops/models/select_best.py
+      - name: Build Docker
+        run: docker build -t sentiment140-mlops:latest .
