@@ -1,23 +1,49 @@
-import pandas as pd, tensorflow as tf, mlflow
-from transformers import DistilBertTokenizerFast, TFDistilBertForSequenceClassification
+import pandas as pd
+import torch
+from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification, Trainer, TrainingArguments
+import mlflow
+from datasets import Dataset
 
+# Load data
 df = pd.read_csv("data/processed/sentiment140.csv").sample(50000, random_state=42)
-texts, labels = df["text"].tolist(), df["label"].tolist()
+df_train = df.sample(frac=0.8, random_state=42)
+df_test = df.drop(df_train.index)
 
 tokenizer = DistilBertTokenizerFast.from_pretrained("distilbert-base-uncased")
-X = tokenizer(texts, truncation=True, padding=True, max_length=128, return_tensors="tf")
-dataset = tf.data.Dataset.from_tensor_slices((dict(X), labels))
-train_size = int(0.8 * len(dataset))
-train_ds = dataset.take(train_size).batch(16)
-test_ds = dataset.skip(train_size).batch(16)
 
-model = TFDistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=2)
+def tokenize(batch):
+    return tokenizer(batch["text"], padding="max_length", truncation=True, max_length=128)
 
-mlflow.set_experiment("Sentiment_DistilBERT")
-with mlflow.start_run(run_name="DistilBERT_Sentiment140"):
+train_dataset = Dataset.from_pandas(df_train).map(tokenize, batched=True)
+test_dataset = Dataset.from_pandas(df_test).map(tokenize, batched=True)
+
+train_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "label"])
+test_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "label"])
+
+# Load model
+model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=2)
+
+# Training
+training_args = TrainingArguments(
+    output_dir="./models/distilbert",
+    evaluation_strategy="epoch",
+    save_strategy="no",
+    per_device_train_batch_size=8,
+    num_train_epochs=2,
+    logging_dir="./reports/logs",
+)
+
+mlflow.set_experiment("Sentiment_DistilBERT_PyTorch")
+with mlflow.start_run(run_name="DistilBERT_PyTorch_Sentiment140"):
     mlflow.transformers.autolog()
-    model.compile(optimizer="adam", loss=model.compute_loss, metrics=["accuracy"])
-    model.fit(train_ds, validation_data=test_ds, epochs=2)
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=test_dataset,
+    )
+    trainer.train()
+
     model.save_pretrained("models/distilbert")
     tokenizer.save_pretrained("models/distilbert")
-    print("✅ DistilBERT trained & saved!")
+    print("✅ DistilBERT (PyTorch) trained & saved!")
