@@ -26,7 +26,7 @@ model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-unc
 # Training
 training_args = TrainingArguments(
     output_dir="./models/distilbert",
-    evaluation_strategy="steps", 
+    eval_strategy="steps", 
     eval_steps=500,                
     save_strategy="no",            
     per_device_train_batch_size=8,
