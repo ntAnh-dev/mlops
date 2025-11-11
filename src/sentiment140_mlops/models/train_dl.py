@@ -26,11 +26,14 @@ model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-unc
 # Training
 training_args = TrainingArguments(
     output_dir="./models/distilbert",
-    evaluation_strategy="epoch",
-    save_strategy="no",
+    evaluation_strategy="steps", 
+    eval_steps=500,                
+    save_strategy="no",            
     per_device_train_batch_size=8,
     num_train_epochs=2,
     logging_dir="./reports/logs",
+    logging_steps=100,             
+    report_to="none"      
 )
 
 mlflow.set_experiment("Sentiment_DistilBERT_PyTorch")
